@@ -68,6 +68,11 @@ namespace JCMG.PackageTools.Editor
 		public string[] packageIgnorePaths;
 
 		/// <summary>
+		/// The path to the folder containing the source the library samples.
+		/// </summary>
+		public string samplesSourcePath;
+
+		/// <summary>
 		/// A path to the package source distribution contents.
 		/// </summary>
 		public string packageDestinationPath;
@@ -106,6 +111,21 @@ namespace JCMG.PackageTools.Editor
 		/// The category the package belongs in.
 		/// </summary>
 		public string category;
+
+		/// <summary>
+		/// The name of the author.
+		/// </summary>
+		public string authorName;
+
+		/// <summary>
+		/// The mail of the author.
+		/// </summary>
+		public string authorMail;
+
+		/// <summary>
+		/// The URL of the author.
+		/// </summary>
+		public string authorURL;
 
 		/// <summary>
 		/// A collection of keywords that describe the package.

@@ -51,6 +51,8 @@ namespace JCMG.PackageTools.Editor
 		private const string DEPENDENCIES = @"""dependencies"":";
 		private const string DEPENDENCY_CHILD_FORMAT = @"""{0}"":""{1}""";
 		private const string CATEGORY = @"""category"":""{0}""";
+		private const string AUTHOR = @"""author"":{{""name"":""{0}"",""mail"":""{1}"",""url"":""{2}""}}";
+		private const string SAMPLES = @"""samples"":[{{""displayName"":""{0}"",""description"":""{1}"",""path"":""{2}""}}]";
 
 		/// <summary>
 		/// Returns a Json <see cref="string"/> representation of the <see cref="PackageManifestConfig"/>
@@ -77,7 +79,7 @@ namespace JCMG.PackageTools.Editor
 
 			// Add the keywords if any exist.
 			if (packageManifest.keywords != null &&
-			    packageManifest.keywords.Length > 0)
+				packageManifest.keywords.Length > 0)
 			{
 				JSON_STRING_BUILDER.Append(KEYWORDS);
 				JSON_STRING_BUILDER.Append(OPEN_BRACKET);
@@ -99,10 +101,19 @@ namespace JCMG.PackageTools.Editor
 			}
 
 			JSON_STRING_BUILDER.AppendFormat(CATEGORY, packageManifest.category);
+			JSON_STRING_BUILDER.Append(COMMA);
+
+			JSON_STRING_BUILDER.AppendFormat(AUTHOR, packageManifest.authorName, packageManifest.authorMail, packageManifest.authorURL);
+
+			if (!packageManifest.samplesSourcePath.Equals(""))
+			{
+				JSON_STRING_BUILDER.Append(COMMA);
+				JSON_STRING_BUILDER.AppendFormat(SAMPLES, "Sample", $"Set of use examples for {packageManifest.displayName}", "Samples~");
+			}
 
 			// Add the dependencies block if any exist.
 			if (packageManifest.dependencies != null &&
-			    packageManifest.dependencies.Length > 0)
+				packageManifest.dependencies.Length > 0)
 			{
 				JSON_STRING_BUILDER.Append(COMMA);
 				JSON_STRING_BUILDER.Append(DEPENDENCIES);
@@ -112,7 +123,7 @@ namespace JCMG.PackageTools.Editor
 				{
 					var dependency = packageManifest.dependencies[i];
 					if (string.IsNullOrEmpty(dependency.packageName) ||
-					    string.IsNullOrEmpty(dependency.packageVersion))
+						string.IsNullOrEmpty(dependency.packageVersion))
 					{
 						continue;
 					}

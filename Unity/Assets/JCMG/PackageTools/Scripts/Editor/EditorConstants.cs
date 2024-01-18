@@ -80,7 +80,7 @@ namespace JCMG.PackageTools.Editor
 		                                                         "will be created containing descriptive information about the " +
 		                                                         "package. This can be output to an Runtime or Editor folder.";
 
-		public const string UPDATE_PACKAGE_BUTTON_TEXT = "Export Package Source";
+		public const string UPDATE_PACKAGE_BUTTON_TEXT = "Export Package";
 		public const string EXPORT_LEGACY_PACKAGE_BUTTON_TEXT = "Export as Legacy Package";
 
 		public const string SELECT_SOURCE_PATH_FILE_PICKER_TITLE = "Select Source Asset Path";

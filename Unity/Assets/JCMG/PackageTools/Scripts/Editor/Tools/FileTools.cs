@@ -56,9 +56,9 @@ namespace JCMG.PackageTools.Editor
 		/// <param name="packageManifest"></param>
 		public static void CreateOrUpdatePackageSource(PackageManifestConfig packageManifest)
 		{
-			#if UNITY_EDITOR
+#if UNITY_EDITOR
 			EditorUtility.DisplayProgressBar(EditorConstants.PROGRESS_BAR_TITLE, string.Empty, 0f);
-			#endif
+#endif
 
 			try
 			{
@@ -100,6 +100,16 @@ namespace JCMG.PackageTools.Editor
 					Directory.CreateDirectory(packageManifest.packageDestinationPath);
 				}
 
+				// Create new samples~ directory
+				if (Directory.Exists(packageManifest.packageDestinationPath + "/Samples~"))
+				{
+					RecursivelyDeleteDirectoryContents(new DirectoryInfo(packageManifest.packageDestinationPath + "/Samples~"));
+				}
+				else
+				{
+					Directory.CreateDirectory(packageManifest.packageDestinationPath + "/Samples~");
+				}
+
 				// Copy over the package json and meta file
 				var destinationPackageJsonPath =
 					Path.Combine(packageManifest.packageDestinationPath, EditorConstants.PACKAGE_JSON_FILENAME);
@@ -111,48 +121,21 @@ namespace JCMG.PackageTools.Editor
 					Path.Combine(packageManifest.packageDestinationPath,
 						string.Format(EditorConstants.META_FORMAT, EditorConstants.PACKAGE_JSON_FILENAME)));
 
-				// Copy over all directory and file content from source to destination.
-				var normalizedDestinationPath = Path.GetFullPath(packageManifest.packageDestinationPath);
-				foreach (var sourcePath in packageManifest.packageSourcePaths)
+				//Copy source packages
+				CopyPackages(packageManifest, packageManifest.packageSourcePaths, packageManifest.packageDestinationPath, true);
+
+			    //Copy samples source if path is defined
+				if (!packageManifest.samplesSourcePath.Equals(""))
 				{
-					// If its a file, copy over it and its meta file if it exists.
-					var normalizedSourcePath = Path.GetFullPath(sourcePath);
-					if (IsFile(normalizedSourcePath) && File.Exists(normalizedSourcePath))
-					{
-						var fileInfo = new FileInfo(normalizedSourcePath);
-						if (fileInfo.Directory == null)
-						{
-							continue;
-						}
-
-						var parentDirectoryPath = fileInfo.Directory.FullName;
-						var newPath = normalizedSourcePath.Replace(parentDirectoryPath, normalizedDestinationPath);
-
-						File.Copy(normalizedSourcePath, newPath);
-
-						var sourceMetaPath = string.Format(EditorConstants.META_FORMAT, normalizedSourcePath);
-						if (File.Exists(sourceMetaPath))
-						{
-							var newMetaPath = sourceMetaPath.Replace(parentDirectoryPath, normalizedDestinationPath);
-							File.Copy(sourceMetaPath, newMetaPath);
-						}
-					}
-					// Otherwise if this is a folder, copy it and all the contents over to the destination folder.
-					else
-					{
-						RecursivelyCopyDirectoriesAndFiles(
-							packageManifest,
-							new DirectoryInfo(normalizedSourcePath),
-							normalizedSourcePath,
-							normalizedDestinationPath);
-					}
+					string[] samplesSourcePaths = { packageManifest.samplesSourcePath };
+					CopyPackages(packageManifest, samplesSourcePaths, Path.Combine(packageManifest.packageDestinationPath, "Samples~"), false);
 				}
 
 				Debug.LogFormat(EditorConstants.PACKAGE_UPDATE_SUCCESS_FORMAT, packageManifest.packageName);
 
-				#if UNITY_EDITOR
+#if UNITY_EDITOR
 				EditorUtility.RevealInFinder(destinationPackageJsonPath);
-				#endif
+#endif
 			}
 			catch (Exception ex)
 			{
@@ -161,10 +144,50 @@ namespace JCMG.PackageTools.Editor
 			}
 			finally
 			{
-				#if UNITY_EDITOR
+#if UNITY_EDITOR
 				EditorUtility.DisplayProgressBar(EditorConstants.PROGRESS_BAR_TITLE, string.Empty, 1f);
 				EditorUtility.ClearProgressBar();
-				#endif
+#endif
+			}
+		}
+
+		private static void CopyPackages(PackageManifestConfig packageManifest, string[] sourcePaths, string destinationPath, bool useIgnorePaths)
+		{
+			// Copy over all directory and file content from source to destination.
+			var normalizedDestinationPath = Path.GetFullPath(destinationPath);
+			foreach (var sourcePath in sourcePaths)
+			{
+				// If its a file, copy over it and its meta file if it exists.
+				var normalizedSourcePath = Path.GetFullPath(sourcePath);
+				if (IsFile(normalizedSourcePath) && File.Exists(normalizedSourcePath))
+				{
+					var fileInfo = new FileInfo(normalizedSourcePath);
+					if (fileInfo.Directory == null)
+					{
+						continue;
+					}
+
+					var parentDirectoryPath = fileInfo.Directory.FullName;
+					var newPath = normalizedSourcePath.Replace(parentDirectoryPath, normalizedDestinationPath);
+
+					File.Copy(normalizedSourcePath, newPath);
+
+					var sourceMetaPath = string.Format(EditorConstants.META_FORMAT, normalizedSourcePath);
+					if (File.Exists(sourceMetaPath))
+					{
+						var newMetaPath = sourceMetaPath.Replace(parentDirectoryPath, normalizedDestinationPath);
+						File.Copy(sourceMetaPath, newMetaPath);
+					}
+				}
+				// Otherwise if this is a folder, copy it and all the contents over to the destination folder.
+				else
+				{
+					RecursivelyCopyDirectoriesAndFiles(
+						packageManifest,
+						new DirectoryInfo(normalizedSourcePath),
+						normalizedSourcePath,
+						normalizedDestinationPath, useIgnorePaths);
+				}
 			}
 		}
 
@@ -191,7 +214,8 @@ namespace JCMG.PackageTools.Editor
 			PackageManifestConfig packageManifest,
 			DirectoryInfo directoryInfo,
 			string sourcePath,
-			string destinationPath)
+			string destinationPath,
+			bool useIgnorePaths)
 		{
 			var normalizedSourcePath = Path.GetFullPath(sourcePath);
 			var normalizedDestinationPath = Path.GetFullPath(destinationPath);
@@ -199,7 +223,7 @@ namespace JCMG.PackageTools.Editor
 			foreach (var sdi in subDirectoryInfo)
 			{
 				// If any of the paths we're looking at match the ignore paths from the user, skip them
-				if (packageManifest.packageIgnorePaths.Any(x =>
+				if (useIgnorePaths && packageManifest.packageIgnorePaths.Any(x =>
 					sdi.FullName.Contains(Path.GetFullPath(Path.Combine(EditorConstants.PROJECT_PATH, x)))))
 				{
 					continue;
@@ -207,15 +231,15 @@ namespace JCMG.PackageTools.Editor
 
 				Directory.CreateDirectory(sdi.FullName.Replace(normalizedSourcePath, normalizedDestinationPath));
 
-				RecursivelyCopyDirectoriesAndFiles(packageManifest, sdi, normalizedSourcePath, normalizedDestinationPath);
+				RecursivelyCopyDirectoriesAndFiles(packageManifest, sdi, normalizedSourcePath, normalizedDestinationPath, useIgnorePaths);
 			}
 
 			var fileInfo = directoryInfo.GetFiles(EditorConstants.WILDCARD_FILTER);
 			foreach (var fi in fileInfo)
 			{
 				// If any of the paths we're looking at match the ignore paths from the user, skip them
-				if (packageManifest.packageIgnorePaths.Any(x =>
-					fi.FullName.Contains(Path.GetFullPath(Path.Combine(EditorConstants.PROJECT_PATH, x)))))
+				if (useIgnorePaths && packageManifest.packageIgnorePaths.Any(x =>
+				   fi.FullName.Contains(Path.GetFullPath(Path.Combine(EditorConstants.PROJECT_PATH, x)))))
 				{
 					continue;
 				}

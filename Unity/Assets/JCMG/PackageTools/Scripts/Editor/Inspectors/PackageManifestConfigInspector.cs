@@ -38,6 +38,7 @@ namespace JCMG.PackageTools.Editor
 
 		private const string SOURCE_PATHS_PROPERTY_NAME = "packageSourcePaths";
 		private const string EXCLUDE_PATHS_PROPERTY_NAME = "packageIgnorePaths";
+		private const string SAMPLES_SOURCE_PATH_PROPERTY_NAME = "samplesSourcePath";
 		private const string DESTINATION_PATH_PROPERTY_NAME = "packageDestinationPath";
 		private const string LEGACY_PACKAGE_PATH_PROPERTY_NAME = "legacyPackageDestinationPath";
 		private const string NAME_PROPERTY_NAME = "packageName";
@@ -46,6 +47,9 @@ namespace JCMG.PackageTools.Editor
 		private const string UNITY_VERSION_PROPERTY_NAME = "unityVersion";
 		private const string DESCRIPTION_PROPERTY_NAME = "description";
 		private const string CATEGORY_PROPERTY_NAME = "category";
+		private const string AUTHOR_NAME_PROPERTY_NAME = "authorName";
+		private const string AUTHOR_MAIL_PROPERTY_NAME = "authorMail";
+		private const string AUTHOR_URL_PROPERTY_NAME = "authorURL";
 		private const string KEYWORDS_PROPERTY_NAME = "keywords";
 		private const string DEPENDENCIES_PROPERTY_NAME = "dependencies";
 		private const string VERSION_CONSTANTS_PATH_PROPERTY_NAME = "versionConstantsPath";
@@ -72,7 +76,7 @@ namespace JCMG.PackageTools.Editor
 				elementHeight = EditorConstants.FOLDER_PATH_PICKER_HEIGHT
 			};
 
-			_keywordReorderableList =new ReorderableList(
+			_keywordReorderableList = new ReorderableList(
 				serializedObject,
 				serializedObject.FindProperty(KEYWORDS_PROPERTY_NAME))
 			{
@@ -109,6 +113,9 @@ namespace JCMG.PackageTools.Editor
 				EditorGUILayout.PropertyField(serializedObject.FindProperty(UNITY_VERSION_PROPERTY_NAME));
 				EditorGUILayout.PropertyField(serializedObject.FindProperty(DESCRIPTION_PROPERTY_NAME));
 				EditorGUILayout.PropertyField(serializedObject.FindProperty(CATEGORY_PROPERTY_NAME));
+				EditorGUILayout.PropertyField(serializedObject.FindProperty(AUTHOR_NAME_PROPERTY_NAME));
+				EditorGUILayout.PropertyField(serializedObject.FindProperty(AUTHOR_MAIL_PROPERTY_NAME));
+				EditorGUILayout.PropertyField(serializedObject.FindProperty(AUTHOR_URL_PROPERTY_NAME));
 
 				_keywordReorderableList.DoLayoutList();
 				_dependenciesReorderableList.DoLayoutList();
@@ -119,13 +126,27 @@ namespace JCMG.PackageTools.Editor
 				_sourcePathsReorderableList.DoLayoutList();
 				_excludePathsReorderableList.DoLayoutList();
 
+				// Samples Export
+				using (new EditorGUILayout.HorizontalScope())
+				{
+					var samplesDestinationPathProperty = serializedObject.FindProperty(SAMPLES_SOURCE_PATH_PROPERTY_NAME);
+					EditorGUILayout.PropertyField(
+						samplesDestinationPathProperty,
+						GUILayout.Height(EditorConstants.FOLDER_PATH_PICKER_HEIGHT));
+					GUILayoutTools.DrawFolderPickerLayout(
+						samplesDestinationPathProperty,
+						EditorConstants.SELECT_PACKAGE_EXPORT_PATH_PICKER_TITLE);
+				}
+
 				// Package Source Export
 				using (new EditorGUILayout.HorizontalScope())
 				{
 					var destinationPathProperty = serializedObject.FindProperty(DESTINATION_PATH_PROPERTY_NAME);
+
 					EditorGUILayout.PropertyField(
 						destinationPathProperty,
 						GUILayout.Height(EditorConstants.FOLDER_PATH_PICKER_HEIGHT));
+
 					GUILayoutTools.DrawFolderPickerLayout(
 						destinationPathProperty,
 						EditorConstants.SELECT_PACKAGE_EXPORT_PATH_PICKER_TITLE);
@@ -135,9 +156,11 @@ namespace JCMG.PackageTools.Editor
 				using (new EditorGUILayout.HorizontalScope())
 				{
 					var legacyPackagePathProperty = serializedObject.FindProperty(LEGACY_PACKAGE_PATH_PROPERTY_NAME);
+					EditorGUI.BeginDisabledGroup(true);
 					EditorGUILayout.PropertyField(
 						legacyPackagePathProperty,
 						GUILayout.Height(EditorConstants.FOLDER_PATH_PICKER_HEIGHT));
+					EditorGUI.EndDisabledGroup();
 					GUILayoutTools.DrawFolderPickerLayout(
 						legacyPackagePathProperty,
 						EditorConstants.SELECT_PACKAGE_EXPORT_PATH_PICKER_TITLE);
@@ -154,7 +177,7 @@ namespace JCMG.PackageTools.Editor
 						EditorGUILayout.HelpBox(EditorConstants.GLOBAL_NAMESPACE_WARNING, MessageType.Info);
 					}
 
-					// Output folder
+				// Output folder
 					using (new EditorGUILayout.HorizontalScope())
 					{
 						var versionConstantsPathProperty = serializedObject.FindProperty(VERSION_CONSTANTS_PATH_PROPERTY_NAME);
@@ -167,7 +190,7 @@ namespace JCMG.PackageTools.Editor
 					}
 				}
 
-				if(scope.changed)
+				if (scope.changed)
 				{
 					serializedObject.ApplyModifiedProperties();
 				}
@@ -175,6 +198,9 @@ namespace JCMG.PackageTools.Editor
 
 			EditorGUILayout.Space();
 			EditorGUILayout.LabelField(EditorConstants.PACKAGE_ACTIONS_HEADER, EditorStyles.boldLabel);
+
+
+			//Hide generate version constants package
 
 			if (GUILayout.Button(new GUIContent(
 				EditorConstants.GENERATE_VERSION_CONSTANTS_BUTTON_TEXT,
@@ -229,7 +255,8 @@ namespace JCMG.PackageTools.Editor
 				sourcePathProperty,
 				new GUIContent(string.Format(EditorConstants.SOURCE_PATH_ELEMENT_LABEL_FORMAT, index)));
 
-			var filePickerRect = new Rect {
+			var filePickerRect = new Rect
+			{
 				position = new Vector2(
 					sourcePathRect.width + EditorConstants.FOLDER_PATH_PICKER_BUFFER,
 					sourcePathRect.position.y),
@@ -237,7 +264,8 @@ namespace JCMG.PackageTools.Editor
 				height = EditorConstants.FOLDER_PATH_PICKER_HEIGHT,
 			};
 
-			var folderPickerRect = new Rect {
+			var folderPickerRect = new Rect
+			{
 				position = new Vector2(
 					sourcePathRect.width + EditorConstants.FOLDER_PATH_PICKER_HEIGHT + EditorConstants.FOLDER_PATH_PICKER_BUFFER,
 					sourcePathRect.position.y),
